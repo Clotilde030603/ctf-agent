@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+*.swp
+*.swo
+.DS_Store
+
+challenges/*/artifacts/
+challenges/*/*.core
+challenges/*/*.pcapng
+challenges/*/*.pcap
+challenges/*/*.zip
+challenges/*/*.7z
+challenges/*/*.tar
+challenges/*/*.tar.gz
+challenges/*/*.bin
+challenges/*/*.out
