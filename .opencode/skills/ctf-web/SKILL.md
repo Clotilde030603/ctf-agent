@@ -26,6 +26,15 @@ Use this for websites, APIs, source bundles, containers exposing HTTP services, 
 4. Test the smallest high-signal hypotheses first.
 5. Save working requests and proof-of-concept scripts under the challenge directory.
 
+## Parallel lanes
+
+Web apps expose multiple attack surfaces simultaneously. Run parallel discovery lanes where they do not interfere:
+- Lane A: Source and configuration review (routes, filters, secrets in code).
+- Lane B: Endpoint enumeration and parameter fuzzing (hidden routes, debug endpoints).
+- Lane C: Injection testing on the highest-surface inputs (SQL, SSTI, command) with small probes.
+- Lane D: Authentication/session analysis (JWT, cookies, headers) for bypass opportunities.
+Merge when a lane confirms a vulnerability class; abandon lanes that return consistent negatives after quick tests.
+
 ## High-value checks
 
 - Template injection indicators such as reflected evaluation syntax.

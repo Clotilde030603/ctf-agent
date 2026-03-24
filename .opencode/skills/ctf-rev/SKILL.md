@@ -26,6 +26,15 @@ Use this for crackmes, key checks, obfuscated scripts, custom virtual machines, 
 4. Rewrite the important logic into a small script.
 5. Validate the reconstructed logic against the binary or samples.
 
+## Parallel lanes
+
+Reverse engineering benefits from multiple simultaneous analysis angles:
+- Lane A: Decompiler-assisted high-level logic recovery (validation, encoding chains).
+- Lane B: Disassembly-focused instruction tracing for anti-debug, packers, or VM handlers.
+- Lane C: Dynamic analysis for input/output behavior and state changes.
+- Lane D: String and data table extraction for hardcoded constants, keys, or flag fragments.
+Merge when one lane produces a complete transformation or candidate flag; abandon lanes that stall on heavy obfuscation when another lane already yields actionable logic.
+
 ## High-value patterns
 
 - XOR/add/sub rotation pipelines.

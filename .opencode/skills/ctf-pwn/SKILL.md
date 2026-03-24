@@ -26,6 +26,15 @@ Use this for ELF or PE challenges, remote socket services, shellcode tasks, or m
 4. Prove control with the smallest possible primitive.
 5. Only then build the full exploit path to leak, calculate bases, and get code execution or flag access.
 
+## Parallel lanes
+
+Binary exploitation often presents multiple bug classes or leak paths. Run parallel reconnaissance lanes when safe:
+- Lane A: Static analysis for obvious overflows, format strings, or UAF patterns.
+- Lane B: Dynamic analysis for I/O behavior, crash sites, and interaction flow.
+- Lane C: Leak primitive discovery (format string, info leak bugs, predictable addresses).
+- Lane D: ROP gadget or one-gadget feasibility check for the target libc/runtime.
+Merge when one lane confirms a reachable vulnerability and a viable primitive; abandon lanes that require impossible preconditions (e.g., full RELRO for GOT overwrite attempts).
+
 ## Common exploit paths
 
 - Stack overflow to ROP.
