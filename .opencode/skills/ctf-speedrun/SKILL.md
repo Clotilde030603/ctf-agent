@@ -25,6 +25,15 @@ Use this whenever the user cares more about solving within the contest clock tha
 4. The moment interaction becomes repetitive, write a script.
 5. If a partial primitive appears, exploit that path before exploring something prettier.
 
+## Parallel lanes
+
+Speedrun mode aggressively parallelizes discovery to minimize time-to-flag:
+- Run triage tools concurrently (file, strings, binwalk, exiftool, checksec) to maximize information density early.
+- When the attack surface is unclear, spawn 2-3 short parallel lanes testing different high-signal hypotheses (e.g., source review vs. endpoint fuzzing vs. metadata extraction).
+- Time-box each lane strictly; kill lanes that stall without actionable output.
+- Merge immediately when any lane produces a concrete next step, vulnerability evidence, or flag fragment.
+- Prefer parallel breadth over sequential depth until a clear exploit path emerges.
+
 ## Operating rules
 
 - Prefer evidence-rich actions: triage, source review, strings, metadata, protocol capture, fast enumeration.

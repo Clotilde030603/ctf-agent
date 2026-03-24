@@ -43,6 +43,14 @@ Use this first when a new challenge arrives and you do not yet know the category
 - If it is unclear, puzzle-like, automation-heavy, or crosses categories: use `ctf-misc` first.
 - If the main concern is contest time and rapid iteration: also load `ctf-speedrun` behavior.
 
+## Parallel lanes
+
+When multiple hypotheses are independent and high-signal, spawn concurrent investigations instead of sequencing them:
+- Run triage tools (`file`, `strings`, `binwalk`, `exiftool`) in parallel where safe.
+- If the category is genuinely ambiguous (e.g., could be crypto or stego), start two short exploratory lanes in parallel, then merge when one produces actionable signal.
+- For mixed challenges, run dominant-category analysis while a secondary lane validates the cross-cutting angle.
+- Merge results as soon as one lane confirms a concrete next step; abandon lanes that stall without signal.
+
 ## Rules
 
 - Do not invent challenge details before reading files.
@@ -52,3 +60,4 @@ Use this first when a new challenge arrives and you do not yet know the category
 - If you recover a flag candidate, validate the format instead of assuming it is final.
 - If no workspace exists, tell the user exactly which `make challenge` command to run or create the structure before deeper analysis.
 - Bias toward the fastest credible solve path, not the most comprehensive analysis.
+- When time matters, run parallel triage and abort low-signal lanes quickly.
