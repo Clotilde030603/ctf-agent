@@ -4,15 +4,11 @@ import argparse
 from collections.abc import Callable, Iterable, Iterator
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from pathlib import Path
-from typing import Optional, TypeVar, Union
+from typing import Optional, TypeVar
 
 
 T = TypeVar("T")
 R = TypeVar("R")
-
-
-def load_input(path: str) -> bytes:
-    return Path(path).read_bytes()
 
 
 def load_lines(path: str) -> list[str]:
@@ -82,30 +78,28 @@ def parallel_first(
     return None
 
 
-def try_key(candidate: str, data: bytes) -> Optional[Union[str, bytes]]:
+def try_one(candidate: str) -> Optional[str]:
     return None
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Parallel crypto solve skeleton")
-    parser.add_argument("input", nargs="?", default="ciphertext.bin")
-    parser.add_argument("-k", "--keys", default="keys.txt")
+    parser = argparse.ArgumentParser(description="Parallel CTF solve skeleton")
+    parser.add_argument("input", nargs="?", default="candidates.txt")
     parser.add_argument("-w", "--workers", type=int, default=16)
     args = parser.parse_args()
 
-    data = load_input(args.input)
-    keys = load_lines(args.keys)
-    if not keys:
-        print(f"loaded {len(data)} bytes; add candidate keys to {args.keys}")
+    candidates = load_lines(args.input)
+    if not candidates:
+        print(f"add work items to {args.input}")
         return
 
-    hit = parallel_first(keys, lambda key: try_key(key, data), workers=args.workers)
+    hit = parallel_first(candidates, try_one, workers=args.workers)
     if hit is None:
-        print(f"checked {len(keys)} keys without a hit")
+        print(f"checked {len(candidates)} items without a hit")
         return
 
-    key, result = hit
-    print(key)
+    candidate, result = hit
+    print(candidate)
     print(result)
 
 

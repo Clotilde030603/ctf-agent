@@ -4,6 +4,9 @@ import argparse
 from pathlib import Path
 
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+TOOLS_DIR = REPO_ROOT / "tools"
+
 CATEGORY_PROMPTS = {
     "web": "Start with ctf-orchestrator, then likely route into ctf-web.",
     "pwn": "Start with ctf-orchestrator, then likely route into ctf-pwn.",
@@ -13,10 +16,22 @@ CATEGORY_PROMPTS = {
     "misc": "Start with ctf-orchestrator and let it classify the challenge.",
 }
 
+SOLVE_TEMPLATES = {
+    "crypto": "crypto_template.py",
+    "pwn": "exploit_template.py",
+}
+
+DEFAULT_SOLVE_TEMPLATE = "solver_template.py"
+
 
 def write_if_missing(path: Path, content: str) -> None:
     if not path.exists():
         path.write_text(content, encoding="utf-8")
+
+
+def load_solve_template(category: str) -> str:
+    template_name = SOLVE_TEMPLATES.get(category, DEFAULT_SOLVE_TEMPLATE)
+    return (TOOLS_DIR / template_name).read_text(encoding="utf-8")
 
 
 def main() -> None:
@@ -68,11 +83,7 @@ def main() -> None:
     )
     write_if_missing(
         base / "solve.py",
-        "#!/usr/bin/env python3\n\n"
-        "def main() -> None:\n"
-        "    print(\"replace with challenge solver\")\n\n"
-        "if __name__ == \"__main__\":\n"
-        "    main()\n",
+        load_solve_template(args.category),
     )
 
     print(f"created workspace: {base}")
