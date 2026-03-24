@@ -26,6 +26,15 @@ Use this for ciphertexts, keys, signatures, modular arithmetic, pseudorandomness
 4. Script experiments so results are reproducible.
 5. Confirm the recovered plaintext or flag format.
 
+## Parallel lanes
+
+Crypto challenges often present multiple attack paths with varying cost. Run parallel hypothesis lanes:
+- Lane A: Encoding and simple transform checks (base64, hex, XOR with short/repeated key, ROT).
+- Lane B: Statistical and frequency analysis for classical ciphers or weak randomness.
+- Lane C: Mathematical structure tests (small RSA exponent, shared factors, linear congruential generators).
+- Lane D: Oracle behavior probing if any service interaction is available (padding oracles, error leaks).
+Merge when one lane produces partial plaintext or key material; abandon lanes that exhaust their search space without result.
+
 ## High-value checks
 
 - XOR with repeated or short keys.

@@ -25,6 +25,15 @@ Use this when the challenge category is unclear, mixed, or intentionally mislead
 4. Automate the repetitive part as soon as the core transformation is visible.
 5. Keep a clean note trail so the challenge can be handed off or written up later.
 
+## Parallel lanes
+
+Misc challenges often hide their true category. Run multiple independent discovery lanes concurrently:
+- Lane A: Quick encoding/crypto checks (entropy, base64, XOR, small-key brute).
+- Lane B: File structure and container extraction (binwalk, foremost, zsteg).
+- Lane C: Network/protocol artifacts if any pcap or traffic-like data exists.
+- Lane D: Scripting/automation surface if the challenge presents an interactive service.
+Merge when one lane produces a concrete transformation or flag fragment; abandon lanes that return only noise after initial probes.
+
 ## Rules
 
 - Treat misc as a temporary label, not a final diagnosis.

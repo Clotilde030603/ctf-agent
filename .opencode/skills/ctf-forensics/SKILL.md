@@ -26,6 +26,15 @@ Use this for artifact-heavy challenges where the main task is locating, extracti
 4. Carve, decode, or reconstruct the most suspicious artifacts.
 5. Validate any flag candidate with context from the evidence trail.
 
+## Parallel lanes
+
+Forensics artifacts often contain data at multiple layers. Run parallel extraction lanes when safe:
+- Lane A: Metadata and container analysis (exiftool, binwalk, file signatures).
+- Lane B: String and pattern extraction for credentials, URLs, or flag formats.
+- Lane C: Timeline and correlation analysis for logs, pcaps, or revision histories.
+- Lane D: Deep carving and steganography checks on high-entropy regions or suspicious media.
+Merge when one lane produces a recoverable payload or clear flag fragment; abandon lanes that return only noise after initial extraction passes.
+
 ## High-value checks
 
 - `binwalk`, `exiftool`, `strings`, `file`, and hex views.
