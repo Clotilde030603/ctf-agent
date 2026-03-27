@@ -67,6 +67,92 @@ Use ctf-crypto to inspect this ciphertext and identify likely attack paths.
 6. Keep notes, extracted indicators, scripts, and outputs under that challenge directory.
 7. When solved, load `ctf-writeup` to turn the notes into a final writeup.
 
+## Browser session workflow (semi-automatic authentication)
+
+Some CTF challenges require an authenticated browser session to access post-login functionality. This framework supports a **manual-login, automated-reuse** model that keeps credentials secure while enabling browser automation.
+
+### Why manual login?
+
+- **Security**: Credentials are never hardcoded, logged, or transmitted to the agent
+- **Control**: You perform MFA, CAPTCHA, or any custom login flow yourself
+- **Safety**: Session state files are automatically excluded from git (see `.gitignore`)
+
+### How it works
+
+1. **Capture**: Launch a headed browser, manually log in, then save the session storage state
+2. **Reuse**: Automated scripts load the saved session state and continue with authenticated requests
+3. **Scope**: Session files are stored per-challenge and never committed
+
+### Setup (one-time)
+
+```bash
+# Install project dependencies and the Playwright browser
+make bootstrap-env
+```
+
+### Session capture workflow
+
+```bash
+# 1. Create a challenge workspace
+make challenge NAME=htb-web-session CATEGORY=web
+
+# 2. Launch the manual login helper (opens a headed browser)
+python3 scripts/capture_browser_session.py https://challenge.htb/login \
+    challenges/htb-web-session/.auth/storage.playwright-state.json
+
+# 3. Manually log in through the browser window
+# 4. Press Enter in the terminal to save the session state
+# 5. The session file is now available for automation
+```
+
+### Using saved sessions in exploits
+
+```python
+# Example: Reuse session in a solve script
+from playwright.sync_api import sync_playwright
+
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context(storage_state="challenges/htb-web-session/.auth/storage.playwright-state.json")
+    page = context.new_page()
+    
+    # Already authenticated - proceed with the challenge
+    page.goto("https://challenge.htb/dashboard")
+    # ... exploit logic here
+```
+
+### Session management commands
+
+```bash
+# Capture a new session (manual login)
+python3 scripts/capture_browser_session.py <LOGIN_URL> <STATE_PATH>
+
+# Open an authenticated page using a previously saved state
+python3 scripts/open_authenticated_page.py <PAGE_URL> <STATE_PATH>
+
+# Makefile shortcuts
+make session-capture LOGIN_URL=<LOGIN_URL> STATE=<STATE_PATH>
+make session-open PAGE_URL=<PAGE_URL> STATE=<STATE_PATH>
+```
+
+### Important notes
+
+- **Session files are sensitive**: They contain cookies, localStorage, and authentication tokens
+- **Never commit sessions**: The `.gitignore` already excludes `.auth/`, `*.playwright-state.json`, and `*.auth-state.json`
+- **Session expiration**: Saved sessions may expire; re-run capture if authentication fails
+- **Challenge scope**: Store sessions within the challenge directory or top-level `.auth/` for organization
+- **Headed vs headless**: Capture always uses headed mode; automation uses headless by default
+
+### Integration with ctf-web skill
+
+When working on authenticated web challenges:
+
+1. Load `ctf-web` skill and identify the authentication requirement
+2. Use `capture_browser_session.py` to perform manual login and save state
+3. Reference the session path in your exploit scripts
+4. The agent can automate post-login exploration and exploitation
+5. Document the session workflow in `notes.md` for reproducibility
+
 ## Adding LobeHub skills
 
 Search for additional CTF skills:
@@ -124,6 +210,7 @@ This repo assumes the agent can use shell and read/write tools responsibly. For 
 - `requests`
 - `pwntools`
 - `pycryptodome`
+- `playwright` (for browser automation - see Browser session workflow)
 - `binwalk`
 - `strings`, `file`, `xxd`
 - `gdb` or `lldb`
@@ -138,7 +225,11 @@ These are not auto-installed here because environments differ, but the skill fil
 - `.opencode/skills/*/SKILL.md`: tune challenge methodology to your preference.
 - `scripts/bootstrap_lobehub_skills.sh`: change the marketplace skills you want preinstalled.
 - `scripts/new_challenge.py`: change the folder template for your workflow.
+- `browser_session.py`: customize shared browser launch, state validation, and session capture behavior.
+- `scripts/capture_browser_session.py`: adjust the manual login capture CLI.
+- `scripts/open_authenticated_page.py`: adjust the authenticated browser-open CLI.
 - `tools/`: add helper scripts you use repeatedly.
+- `.gitignore`: ensure session state directories are excluded if you modify storage paths.
 
 ## Goal
 
