@@ -6,9 +6,17 @@ import json
 import stat
 import shutil
 import subprocess
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Optional
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from ctf_parallel import parallel_unordered, resolve_workers
 
 
 TEXT_EXTENSIONS = {
@@ -35,6 +43,7 @@ TEXT_EXTENSIONS = {
 
 MAX_TEXT_PREVIEW = 12
 MAX_AUTO_WORKERS = 32
+MAX_AUTO_PROBE_WORKERS = 48
 
 
 def run_command(command: list[str], cwd: Optional[Path] = None) -> str:
@@ -69,19 +78,6 @@ def detect_tools() -> dict[str, bool]:
         "strings": available("strings"),
         "checksec": available("checksec"),
     }
-
-
-def default_worker_count(entry_count: int) -> int:
-    if entry_count <= 1:
-        return 1
-    cpu_count = os.cpu_count() or 1
-    return min(entry_count, max(4, min(MAX_AUTO_WORKERS, cpu_count * 4)))
-
-
-def probe_worker_count(worker_count: int) -> int:
-    return min(MAX_AUTO_WORKERS, max(2, worker_count * 2))
-
-
 def file_type(path: Path, has_file_command: bool, is_dir: bool) -> str:
     if has_file_command:
         output = run_command(["file", "-b", str(path)])
@@ -185,30 +181,51 @@ def collect_entry(
     return entry
 
 
-def collect_entries(paths: list[Path], tools: dict[str, bool], worker_count: int) -> list[dict[str, object]]:
+def collect_entries(
+    paths: list[Path],
+    tools: dict[str, bool],
+    worker_count: int,
+    probe_worker_count: int,
+) -> list[dict[str, object]]:
     probe_executor = None
     if any(tools.values()):
         probe_executor = ThreadPoolExecutor(
-            max_workers=probe_worker_count(worker_count),
+            max_workers=probe_worker_count,
             thread_name_prefix="triage-probe",
         )
 
-    def collect_with_probes(path: Path) -> dict[str, object]:
+    def collect_with_probes(item: tuple[int, Path]) -> dict[str, object]:
+        _, path = item
         return collect_entry(path, tools, probe_executor)
 
+    indexed_paths = list(enumerate(paths))
     if worker_count == 1:
         try:
-            return [collect_with_probes(path) for path in paths]
+            indexed_entries = [
+                (index, collect_with_probes((index, path)))
+                for index, path in indexed_paths
+            ]
         finally:
             if probe_executor is not None:
                 probe_executor.shutdown(wait=True)
 
+        return [entry for _, entry in sorted(indexed_entries, key=lambda item: item[0])]
+
     try:
-        with ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="triage") as executor:
-            return list(executor.map(collect_with_probes, paths))
+        indexed_entries = [
+            (index, entry)
+            for (index, _), entry in parallel_unordered(
+                indexed_paths,
+                collect_with_probes,
+                workers=worker_count,
+                cap=worker_count,
+            )
+        ]
     finally:
         if probe_executor is not None:
             probe_executor.shutdown(wait=True)
+
+    return [entry for _, entry in sorted(indexed_entries, key=lambda item: item[0])]
 
 
 def main() -> None:
@@ -223,7 +240,7 @@ def main() -> None:
         "--workers",
         type=positive_int,
         default=None,
-        help="number of worker threads to use for per-file analysis (default: auto)",
+        help="number of worker threads to use for per-file analysis (default: auto; env: CTF_TRIAGE_WORKERS or CTF_PARALLEL_WORKERS)",
     )
     args = parser.parse_args()
 
@@ -233,8 +250,24 @@ def main() -> None:
 
     paths = [target] if target.is_file() else sorted(target.iterdir())
     tools = detect_tools()
-    worker_count = args.workers or default_worker_count(len(paths))
-    entries = collect_entries(paths, tools, worker_count)
+    worker_count = resolve_workers(
+        args.workers,
+        task_count=len(paths),
+        env_var="CTF_TRIAGE_WORKERS",
+        cap=MAX_AUTO_WORKERS,
+        auto_minimum=4,
+        auto_multiplier=4,
+    )
+    probe_workers = resolve_workers(
+        None,
+        task_count=max(1, len(paths) * 3),
+        default=max(2, worker_count * 3),
+        env_var="CTF_TRIAGE_PROBE_WORKERS",
+        cap=MAX_AUTO_PROBE_WORKERS,
+        auto_minimum=4,
+        auto_multiplier=6,
+    )
+    entries = collect_entries(paths, tools, worker_count, probe_workers)
 
     report = {
         "target": str(target),
