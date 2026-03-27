@@ -29,11 +29,36 @@ Use this for ELF or PE challenges, remote socket services, shellcode tasks, or m
 ## Parallel lanes
 
 Binary exploitation often presents multiple bug classes or leak paths. Run parallel reconnaissance lanes when safe:
+
+### Lane definitions
 - Lane A: Static analysis for obvious overflows, format strings, or UAF patterns.
 - Lane B: Dynamic analysis for I/O behavior, crash sites, and interaction flow.
 - Lane C: Leak primitive discovery (format string, info leak bugs, predictable addresses).
 - Lane D: ROP gadget or one-gadget feasibility check for the target libc/runtime.
-Merge when one lane confirms a reachable vulnerability and a viable primitive; abandon lanes that require impossible preconditions (e.g., full RELRO for GOT overwrite attempts).
+
+### Lane budgets
+- Maximum 3 lanes concurrently.
+- 5 minutes per lane before requiring concrete findings.
+- Static analysis (Lane A) gets priority if binary is small (<100KB).
+
+### Merge criteria (primitive-driven)
+- Confirmed crash/controllable fault (e.g., SEGV at user-controlled address).
+- Working leak primitive (address exposure verified).
+- Write primitive confirmed (can modify GOT, heap metadata, or stack).
+- ROP chain or one-gadget feasible with available gadgets.
+
+### Kill criteria
+- Full RELRO confirmed and lane requires GOT overwrite.
+- PIE + no leak primitive available after 10+ attempts.
+- Canary enabled and no format string/stack leak found.
+- Another lane has merged with working primitive.
+
+### Automation triggers
+- 3+ iterations of crash testing with different inputs.
+- Format string offset hunting.
+- ROP gadget enumeration.
+- Heap manipulation sequences (allocate/free cycles).
+- Any interactive service requiring repeated connections.
 
 ## Common exploit paths
 
