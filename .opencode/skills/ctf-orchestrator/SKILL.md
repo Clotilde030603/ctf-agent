@@ -43,13 +43,43 @@ Use this first when a new challenge arrives and you do not yet know the category
 - If it is unclear, puzzle-like, automation-heavy, or crosses categories: use `ctf-misc` first.
 - If the main concern is contest time and rapid iteration: also load `ctf-speedrun` behavior.
 
-## Parallel lanes
+## Parallel execution model
 
-When multiple hypotheses are independent and high-signal, spawn concurrent investigations instead of sequencing them:
-- Run triage tools (`file`, `strings`, `binwalk`, `exiftool`) in parallel where safe.
-- If the category is genuinely ambiguous (e.g., could be crypto or stego), start two short exploratory lanes in parallel, then merge when one produces actionable signal.
-- For mixed challenges, run dominant-category analysis while a secondary lane validates the cross-cutting angle.
-- Merge results as soon as one lane confirms a concrete next step; abandon lanes that stall without signal.
+Orchestration is about fast triage and lane management. Run parallel investigations aggressively, but with strict budgets and kill conditions.
+
+### Lane budgets
+- Maximum 3-4 concurrent lanes during triage phase (tool-heavy, independent).
+- Maximum 2-3 concurrent lanes during category analysis (hypothesis-driven).
+- Never run more than 4 lanes total; prefer depth over breadth once a signal emerges.
+
+### Time limits per lane
+- Triage tools: 30-60 seconds combined.
+- Category hypothesis lanes: 2-3 minutes max before requiring evidence.
+- If no actionable signal within budget, kill the lane immediately.
+
+### Spawn conditions (when to parallelize)
+- Category genuinely ambiguous (could be crypto OR forensics, web OR rev, etc.).
+- Multiple independent high-signal attack surfaces (e.g., source code + network service + binary).
+- Mixed challenge requiring validation of cross-cutting angles.
+- Tool-based triage that can run concurrently without interference.
+
+### Merge criteria (evidence required to consolidate)
+- One lane produces a concrete next step (vulnerability confirmed, primitive found, partial flag recovered).
+- One lane identifies the definitive category with supporting evidence.
+- Flag fragment or candidate appears in any lane.
+- A reproducible exploit path becomes visible.
+
+### Kill conditions (when to abandon lanes)
+- Lane produces no new signal after its time budget expires.
+- Lane requires impossible preconditions (e.g., full RELRO for GOT overwrite).
+- Another lane has already merged with actionable results.
+- Lane output is consistent noise/negatives after 3+ probes.
+- Lane hypothesis is disproven by evidence from another lane.
+
+### Evidence-driven workflow
+- Never keep a lane alive based on hope; keep it alive based on signal.
+- Document what each lane found before killing it (one-line summary).
+- When merging, explicitly state which evidence triggered the merge and why other lanes were abandoned.
 
 ## Rules
 
@@ -60,4 +90,7 @@ When multiple hypotheses are independent and high-signal, spawn concurrent inves
 - If you recover a flag candidate, validate the format instead of assuming it is final.
 - If no workspace exists, tell the user exactly which `make challenge` command to run or create the structure before deeper analysis.
 - Bias toward the fastest credible solve path, not the most comprehensive analysis.
-- When time matters, run parallel triage and abort low-signal lanes quickly.
+- **Aggressive parallelization**: Spawn concurrent lanes whenever hypotheses are independent; do not sequence exploration.
+- **Rapid lane kill**: Abandon lanes immediately when they exceed time budgets or produce only noise.
+- **Early automation**: The moment a repetitive pattern appears, write a script; do not continue manual iteration.
+- **Evidence over intuition**: Merge lanes only on concrete evidence (flag fragment, confirmed primitive, reproducible vulnerability), not on speculation.
