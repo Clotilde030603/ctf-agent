@@ -29,11 +29,43 @@ Use this for artifact-heavy challenges where the main task is locating, extracti
 ## Parallel lanes
 
 Forensics artifacts often contain data at multiple layers. Run parallel extraction lanes when safe:
+
+### Lane definitions
 - Lane A: Metadata and container analysis (exiftool, binwalk, file signatures).
 - Lane B: String and pattern extraction for credentials, URLs, or flag formats.
 - Lane C: Timeline and correlation analysis for logs, pcaps, or revision histories.
 - Lane D: Deep carving and steganography checks on high-entropy regions or suspicious media.
-Merge when one lane produces a recoverable payload or clear flag fragment; abandon lanes that return only noise after initial extraction passes.
+
+### Lane budgets and extraction layer limits
+- Maximum 3 lanes concurrently.
+- Lane A: 3 minutes (fast metadata pass).
+- Lane B: 2 minutes for initial string extraction.
+- Lane C: 5 minutes for timeline construction.
+- Lane D: 10 minutes max; stego is last resort.
+- Maximum 3 extraction layers deep (file → container → embedded → carved).
+
+### Merge criteria
+- Recoverable payload extracted (executable, compressed data, another file).
+- Flag fragment or complete flag found.
+- Credentials, keys, or URLs discovered.
+- Timeline reveals anomalous event sequence.
+
+### Kill criteria (noise thresholds)
+- Lane returns only random/high-entropy data after initial extraction.
+- 100+ strings scanned with no flag-like patterns or credentials.
+- Timeline shows no anomalies after full correlation.
+- Stego analysis produces no statistical anomalies after 10 minutes.
+- Another lane has successfully extracted a payload.
+
+### Layer exhaustion limits
+- Stop at layer 3 if no new containers emerge (e.g., file → zip → inner file → nothing new).
+- If binwalk finds 5+ false positives, abandon automated carving and switch to targeted extraction.
+
+### Automation triggers
+- Bulk string extraction with pattern matching.
+- Batch file type identification.
+- Automated timeline parsing (logs, pcaps).
+- Steganography tool batch processing.
 
 ## High-value checks
 
