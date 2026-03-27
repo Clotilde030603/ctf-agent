@@ -15,5 +15,8 @@ printf 'Upgrading pip\n'
 printf 'Installing Python packages from requirements.txt\n'
 ./.venv/bin/pip install -r requirements.txt
 
+printf 'Installing Playwright Chromium browser\n'
+./.venv/bin/python -m playwright install chromium
+
 printf 'Done. Activate with:\n'
 printf '  source .venv/bin/activate\n'
