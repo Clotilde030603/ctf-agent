@@ -29,11 +29,35 @@ Use this for websites, APIs, source bundles, containers exposing HTTP services, 
 ## Parallel lanes
 
 Web apps expose multiple attack surfaces simultaneously. Run parallel discovery lanes where they do not interfere:
+
+### Lane definitions
 - Lane A: Source and configuration review (routes, filters, secrets in code).
 - Lane B: Endpoint enumeration and parameter fuzzing (hidden routes, debug endpoints).
 - Lane C: Injection testing on the highest-surface inputs (SQL, SSTI, command) with small probes.
 - Lane D: Authentication/session analysis (JWT, cookies, headers) for bypass opportunities.
-Merge when a lane confirms a vulnerability class; abandon lanes that return consistent negatives after quick tests.
+
+### Lane budgets
+- Maximum 3 lanes running concurrently.
+- 5 minutes per lane before requiring evidence.
+- If source is provided, prioritize Lane A first but run Lane B in parallel.
+
+### Merge criteria
+- Vulnerability confirmed with reproducible PoC.
+- Authentication bypass or privilege escalation identified.
+- Source code reveals clear exploit path.
+- Flag or sensitive data accessed.
+
+### Kill criteria
+- 10+ consecutive endpoints return 404/403 with no anomalies.
+- 5+ injection probes return identical safe responses.
+- JWT/session analysis confirms proper validation with no bypass.
+- Another lane has merged with a working exploit path.
+
+### Automation triggers
+- More than 3 similar requests (fuzzing, parameter testing).
+- Enumeration of routes, IDs, or files.
+- Session/token manipulation testing.
+- Any repetitive HTTP interaction.
 
 ## High-value checks
 
