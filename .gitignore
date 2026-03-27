@@ -4,6 +4,9 @@ __pycache__/
 *.swp
 *.swo
 .DS_Store
+.auth/
+*.playwright-state.json
+*.auth-state.json
 
 challenges/*/artifacts/
 challenges/*/*.core
@@ -15,3 +18,10 @@ challenges/*/*.tar
 challenges/*/*.tar.gz
 challenges/*/*.bin
 challenges/*/*.out
+
+# Browser session state (sensitive - never commit)
+challenges/*/.session/
+challenges/*/session_storage/
+*.session.json
+*.auth.json
+playwright/.auth/
