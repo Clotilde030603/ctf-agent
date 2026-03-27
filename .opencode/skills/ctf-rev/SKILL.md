@@ -29,11 +29,42 @@ Use this for crackmes, key checks, obfuscated scripts, custom virtual machines, 
 ## Parallel lanes
 
 Reverse engineering benefits from multiple simultaneous analysis angles:
+
+### Lane definitions
 - Lane A: Decompiler-assisted high-level logic recovery (validation, encoding chains).
 - Lane B: Disassembly-focused instruction tracing for anti-debug, packers, or VM handlers.
 - Lane C: Dynamic analysis for input/output behavior and state changes.
 - Lane D: String and data table extraction for hardcoded constants, keys, or flag fragments.
-Merge when one lane produces a complete transformation or candidate flag; abandon lanes that stall on heavy obfuscation when another lane already yields actionable logic.
+
+### Lane budgets
+- Maximum 3 lanes concurrently.
+- Lane A: 5 minutes; if decompilation fails or produces garbage, pivot to Lane B.
+- Lane B: 10 minutes for targeted function analysis.
+- Lane C: 5 minutes or until 10+ test inputs executed.
+- Lane D: 2 minutes (fast string/table extraction).
+
+### Decompiler vs dynamic thresholds
+- Use decompiler first for <500KB binaries without packing.
+- Switch to dynamic (Lane C) if: anti-debug detected, heavy obfuscation, or decompiler output is incomprehensible after 5 minutes.
+- Use disassembly (Lane B) for packers, VMs, or when specific instructions matter.
+
+### Merge criteria
+- Complete transformation algorithm recovered.
+- Flag fragment found in strings/data tables.
+- Input/output behavior mapped to validation logic.
+- VM instruction handler or packer stub identified.
+
+### Kill criteria
+- Decompiler produces no useful output after 5 minutes (switch to dynamic).
+- Anti-debug prevents dynamic analysis and no bypass found after 10 minutes.
+- String extraction returns no flag-like patterns and no cryptographic material.
+- Another lane has fully recovered the transformation logic.
+
+### Automation triggers
+- Input brute force against validation function.
+- Automated deobfuscation of simple transforms.
+- Batch testing of decoded strings against flag format.
+- Symbolic execution for path exploration.
 
 ## High-value patterns
 
